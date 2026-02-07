@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trading Paradise | Premium Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+html, body, #root {
+  height: 100%;
+}
+
+      :root {
+        --bg-color: #020617;
+        --accent-blue: #3b82f6;
+      }
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: var(--bg-color);
+        color: #f8fafc;
+        overflow-x: hidden;
+      }
+      
+      /* Glowing background blob */
+      .bg-glow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      /* Animated Background Growth Chart */
+      .growth-bg {
+        position: fixed;
+        bottom: 10%;
+        right: 5%;
+        width: 600px;
+        height: 400px;
+        opacity: 0.03;
+        filter: blur(8px);
+        pointer-events: none;
+        z-index: -2;
+      }
+
+      .climbing-dot {
+        offset-path: path("M0,400 Q150,300 300,350 T600,0");
+        animation: move-dot 10s infinite linear alternate;
+      }
+
+      @keyframes move-dot {
+        0% { offset-distance: 0%; }
+        100% { offset-distance: 100%; }
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #020617; }
+      ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+      @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-15px) rotate(0.5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+      }
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      .glass {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% { opacity: 0.5; box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+        50% { opacity: 0.8; box-shadow: 0 0 40px rgba(59, 130, 246, 0.2); }
+      }
+      .glow-card:hover {
+        animation: pulse-glow 2s infinite ease-in-out;
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide-react": "https://esm.sh/lucide-react@^0.463.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "recharts": "https://esm.sh/recharts@^3.7.0",
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "papaparse": "https://esm.sh/papaparse@^5.5.3"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div class="bg-glow"></div>
+    <div class="growth-bg">
+      <svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,400 Q150,300 300,350 T600,0" stroke="white" stroke-width="4" stroke-linecap="round"/>
+        <circle class="climbing-dot" r="10" fill="white" />
+      </svg>
+    </div>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
