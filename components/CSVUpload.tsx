@@ -146,7 +146,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
         <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold mb-6 tracking-tight leading-tight">
           Escape into <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-500">Trading Paradise</span>
         </h1>
-        <p className="text-slate-500 text-xl md:text-2xl max-w-3xl mx-auto font-black leading-tight tracking-tight">
+        <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
           Refine your strategy. Uncover hidden alpha. <br/>Transform raw history into pure intelligence.
         </p>
       </div>
