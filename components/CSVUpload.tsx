@@ -143,7 +143,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
         <div className="inline-flex items-center gap-4 px-8 py-3 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-black uppercase tracking-[0.6em] mb-10">
           Global Analytical Suite v2.5
         </div>
-        <h1 className="text-6xl md:text-[8rem] font-black mb-10 tracking-tighter leading-none">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-semibold mb-6 tracking-tight leading-tight">
           Escape into <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-500">Trading Paradise</span>
         </h1>
         <p className="text-slate-500 text-xl md:text-2xl max-w-3xl mx-auto font-black leading-tight tracking-tight">
