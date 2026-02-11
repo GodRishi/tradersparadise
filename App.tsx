@@ -10,6 +10,10 @@ import DirectionalAnalysis from './components/DirectionalAnalysis';
 import { calculateStats, formatCurrency } from './utils/stats';
 import { Logo } from './components/Logo';
 import { Table, BarChart3, Settings2, LogOut, ArrowUpRight, ArrowDownRight, Zap, Globe, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
+import { auth, googleProvider } from "./utils/firebase";
+
 
 const App: React.FC = () => {
   const [trades, setTrades] = useState<Trade[] | null>(null);
