@@ -1,15 +1,19 @@
 import { auth, googleProvider } from "../utils/firebase";
 import { signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function SignIn() {
+  const navigate = useNavigate();
+
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
-      alert("Login successful");
-      window.location.reload();
+
+      // Redirect to dashboard after successful login
+      navigate("/dashboard");
     } catch (error) {
-      console.error(error);
-      alert("Login failed");
+      console.error("Login error:", error);
+      alert("Login failed. Please try again.");
     }
   };
 
@@ -44,10 +48,11 @@ export default function SignIn() {
           </p>
         </div>
 
-        {/* Footer note */}
+        {/* Footer */}
         <p className="text-center text-zinc-600 text-xs mt-8">
           © {new Date().getFullYear()} Trader’s Paradise
         </p>
       </div>
     </div>
-  );}
+  );
+}
