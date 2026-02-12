@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
-import { Trade, TradeStats } from './types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Trade } from './types';
 import CSVUpload from './components/CSVUpload';
 import SummaryCards from './components/SummaryCards';
 import { EquityCurve, DrawdownCurve, WinLossDistribution, PerformanceBySymbol } from './components/Charts';
@@ -10,13 +10,14 @@ import DirectionalAnalysis from './components/DirectionalAnalysis';
 import { calculateStats, formatCurrency } from './utils/stats';
 import { Logo } from './components/Logo';
 import { Table, BarChart3, Settings2, LogOut, ArrowUpRight, ArrowDownRight, Zap, Globe, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from "react";
+
 import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
 import { auth, googleProvider } from "./utils/firebase";
 
 const App: React.FC = () => {
-
   const [user, setUser] = useState<User | null>(null);
+  const [trades, setTrades] = useState<Trade[] | null>(null);
+  const [view, setView] = useState<'analytics' | 'trades'>('analytics');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, setUser);
@@ -24,29 +25,22 @@ const App: React.FC = () => {
   }, []);
 
   const handleGoogleLogin = async () => {
-  try {
-    await signInWithPopup(auth, googleProvider);
-  } catch (error) {
-    console.error("Login failed:", error);
-  }
-};
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
 
-const handleLogout = async () => {
-  try {
-    await signOut(auth);
-    setTrades(null);
-  } catch (error) {
-    console.error("Logout failed:", error);
-  }
-};
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setTrades(null);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
-
-  const [trades, setTrades] = useState<Trade[] | null>(null);
-
-
-const App: React.FC = () => {
-  const [trades, setTrades] = useState<Trade[] | null>(null);
-  const [view, setView] = useState<'analytics' | 'trades'>('analytics');
 
   const stats = useMemo(() => {
     return trades ? calculateStats(trades) : null;
