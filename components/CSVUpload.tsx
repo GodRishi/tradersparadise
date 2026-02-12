@@ -62,7 +62,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
     if (file) processFile(file);
   };
 
-  const finalizeMapping = (mapping: ColumnMapping) => {
+  const finalizeMapping = async (mapping: ColumnMapping) => {
     if (!csvPreview) return;
 
     let currentEquity = 0;
@@ -111,9 +111,7 @@ if (!user) {
 try {
   const tradesRef = collection(db, "users", user.uid, "trades");
 
-  for (const trade of trades) {
-    await addDoc(tradesRef, trade);
-  }
+  await Promise.all(trades.map(trade => addDoc(tradesRef, trade)));
 
   console.log("Trades saved to Firestore ✅");
 
