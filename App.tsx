@@ -1,4 +1,5 @@
-
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./utils/firebase";
 import React, { useState, useMemo, useEffect } from 'react';
 import { Trade } from './types';
 import CSVUpload from './components/CSVUpload';
@@ -287,3 +288,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
