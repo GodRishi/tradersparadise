@@ -14,6 +14,17 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
 import { auth, googleProvider } from "./utils/firebase";
 
+const App: React.FC = () => {
+
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  const [trades, setTrades] = useState<Trade[] | null>(null);
+
 
 const App: React.FC = () => {
   const [trades, setTrades] = useState<Trade[] | null>(null);
