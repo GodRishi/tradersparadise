@@ -67,6 +67,32 @@ const App: React.FC = () => {
             <span className="font-black text-3xl tracking-tighter">Trading Paradise</span>
           </div>
           <div className="hidden lg:flex items-center gap-8">
+            {/* Auth Button */}
+            <div className="flex items-center gap-4">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.photoURL || ""}
+                    alt="user"
+                    className="w-9 h-9 rounded-full border border-slate-700"
+                  />
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs text-rose-400 hover:text-rose-300"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGoogleLogin}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold tracking-widest"
+                >
+                  Sign In
+                </button>
+              )}
+            </div>
+
             <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Proprietary Execution Engine</span>
             <div className="h-4 w-px bg-slate-800"></div>
             <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">Secure Node 8.4.1</span>
