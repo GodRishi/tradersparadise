@@ -1,4 +1,5 @@
-
+import { auth, db } from "../utils/firebase";
+import { collection, addDoc } from "firebase/firestore";
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, Download, AlertCircle, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
