@@ -60,7 +60,7 @@ const App: React.FC = () => {
              </div>
             <span className="font-black text-3xl tracking-tighter">Trading Paradise</span>
           </div>
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="flex items-center gap-6">
             {/* Auth Button */}
             <div className="flex items-center gap-4">
               {user ? (
