@@ -23,6 +23,24 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleGoogleLogin = async () => {
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
+
+const handleLogout = async () => {
+  try {
+    await signOut(auth);
+    setTrades(null);
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
+
+
   const [trades, setTrades] = useState<Trade[] | null>(null);
 
 
