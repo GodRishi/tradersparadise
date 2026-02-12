@@ -101,7 +101,28 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
       trade.drawdown = peakEquity - currentEquity;
     });
 
-    onDataParsed(trades);
+    const user = auth.currentUser;
+
+if (!user) {
+  alert("You must be logged in to save trades.");
+  return;
+}
+
+try {
+  const tradesRef = collection(db, "users", user.uid, "trades");
+
+  for (const trade of trades) {
+    await addDoc(tradesRef, trade);
+  }
+
+  console.log("Trades saved to Firestore ✅");
+
+  onDataParsed(trades);
+} catch (err) {
+  console.error("Error saving trades:", err);
+  alert("Failed to save trades to cloud.");
+}
+
   };
 
   const loadDemoData = () => {
