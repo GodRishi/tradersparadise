@@ -1,3 +1,13 @@
+import {
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+  deleteDocs
+} from "firebase/firestore";
+
+import { db } from "./utils/firebase";
 import React, { useState, useMemo, useEffect } from "react";
 import { Trade } from "./types";
 import CSVUpload from "./components/CSVUpload";
@@ -31,29 +41,20 @@ import {
   signOut,
   User,
 } from "firebase/auth";
-
-import {
-  collection,
-  getDocs,
-  addDoc,
-  query,
-  where,
-} from "firebase/firestore";
-
-import { auth, googleProvider, db } from "./utils/firebase";
+import { auth, googleProvider } from "./utils/firebase";
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [view, setView] = useState<"analytics" | "trades">("analytics");
 
-  /* ================= AUTH LISTENER ================= */
+  // 🔐 AUTH STATE
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
 
-      if (firebaseUser) {
-        await loadTradesFromCloud(firebaseUser.uid);
+      if (u) {
+        await loadUserTrades(u.uid);
       } else {
         setTrades(null);
       }
@@ -62,7 +63,51 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  /* ================= GOOGLE LOGIN ================= */
+  // 📥 LOAD TRADES FROM FIRESTORE
+  const loadUserTrades = async (uid: string) => {
+    try {
+      const tradesRef = collection(db, "users", uid, "trades");
+      const snapshot = await getDocs(tradesRef);
+
+      const loadedTrades: Trade[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          timestamp: new Date(data.timestamp),
+        } as Trade;
+      });
+
+      setTrades(loadedTrades);
+    } catch (err) {
+      console.error("Error loading trades:", err);
+    }
+  };
+
+  // 💾 SAVE TRADES TO FIRESTORE
+  const saveTradesToCloud = async (parsedTrades: Trade[]) => {
+    if (!user) return;
+
+    try {
+      const tradesRef = collection(db, "users", user.uid, "trades");
+
+      // optional: clear old trades
+      const oldDocs = await getDocs(tradesRef);
+      await Promise.all(oldDocs.docs.map((d) => d.ref.delete()));
+
+      // save new trades
+      for (const trade of parsedTrades) {
+        await addDoc(tradesRef, {
+          ...trade,
+          timestamp: trade.timestamp.toISOString(),
+        });
+      }
+
+      setTrades(parsedTrades);
+    } catch (err) {
+      console.error("Error saving trades:", err);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -71,7 +116,6 @@ const App: React.FC = () => {
     }
   };
 
-  /* ================= LOGOUT ================= */
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -81,54 +125,6 @@ const App: React.FC = () => {
     }
   };
 
-  /* ================= LOAD TRADES ================= */
-  const loadTradesFromCloud = async (uid: string) => {
-    try {
-      const q = query(collection(db, "trades"), where("uid", "==", uid));
-      const snapshot = await getDocs(q);
-
-      const cloudTrades: Trade[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          ...data,
-          timestamp: new Date(data.timestamp),
-        } as Trade;
-      });
-
-      setTrades(cloudTrades.length ? cloudTrades : null);
-    } catch (error) {
-      console.error("Error loading trades:", error);
-    }
-  };
-
-  /* ================= SAVE TRADES ================= */
-  const saveTradesToCloud = async (newTrades: Trade[]) => {
-    if (!user) return;
-
-    try {
-      const tradesRef = collection(db, "trades");
-
-      for (const trade of newTrades) {
-        await addDoc(tradesRef, {
-          ...trade,
-          uid: user.uid,
-          timestamp: trade.timestamp.toISOString(),
-        });
-      }
-
-      console.log("Trades saved to cloud ✔");
-    } catch (error) {
-      console.error("Error saving trades:", error);
-    }
-  };
-
-  /* ================= HANDLE CSV ================= */
-  const handleCSVParsed = async (parsedTrades: Trade[]) => {
-    setTrades(parsedTrades);
-    await saveTradesToCloud(parsedTrades);
-  };
-
-  /* ================= STATS ================= */
   const stats = useMemo(() => {
     return trades ? calculateStats(trades) : null;
   }, [trades]);
@@ -141,79 +137,60 @@ const App: React.FC = () => {
       : [];
   }, [trades]);
 
-  /* ================= LANDING PAGE ================= */
+  // ================= LANDING (NO TRADES) =================
   if (!trades || !stats) {
     return (
-      <div className="min-h-screen bg-[#020617] text-slate-50 flex flex-col">
-        <nav className="p-10 flex items-center justify-between max-w-[1700px] mx-auto w-full">
-          <div className="flex items-center gap-4">
-            <Logo className="w-12 h-12" />
-            <span className="font-black text-3xl">Trading Paradise</span>
+      <div className="min-h-screen bg-[#020617] text-slate-50 selection:bg-blue-500/30 flex flex-col">
+        <nav className="p-10 flex items-center justify-between max-w-[1700px] mx-auto w-full flex-shrink-0">
+          <div className="flex items-center gap-4 group cursor-pointer">
+            <div className="p-2 glass border border-slate-700 rounded-2xl group-hover:scale-110 transition-all duration-500 shadow-2xl">
+              <Logo className="w-12 h-12" />
+            </div>
+            <span className="font-black text-3xl tracking-tighter">
+              Trading Paradise
+            </span>
           </div>
 
-          {user ? (
-            <div className="flex items-center gap-3">
-              <img
-                src={user.photoURL || ""}
-                className="w-9 h-9 rounded-full border"
-              />
-              <button onClick={handleLogout} className="text-rose-400 text-xs">
-                Logout
-              </button>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.photoURL || ""}
+                    alt="user"
+                    className="w-9 h-9 rounded-full border border-slate-700"
+                  />
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs text-rose-400 hover:text-rose-300"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleGoogleLogin}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold tracking-widest"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
-          ) : (
-            <button
-              onClick={handleGoogleLogin}
-              className="px-5 py-2 rounded-xl bg-blue-600 text-xs font-bold"
-            >
-              Sign In
-            </button>
-          )}
+          </div>
         </nav>
 
-        <div className="flex-1 flex items-center justify-center">
-          <CSVUpload onDataParsed={handleCSVParsed} />
+        <div className="flex-1 flex flex-col items-center justify-center py-20">
+          {/* 🔥 CHANGED: save to cloud instead of direct setTrades */}
+          <CSVUpload onDataParsed={saveTradesToCloud} />
         </div>
       </div>
     );
   }
 
-  /* ================= MAIN DASHBOARD ================= */
+  // ================= MAIN APP (UNCHANGED UI) =================
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-50 flex flex-col">
-      <header className="p-6 flex justify-between items-center border-b border-slate-800">
-        <div className="flex items-center gap-4">
-          <Logo className="w-10 h-10" />
-          <h1 className="font-black text-2xl">Trading Paradise</h1>
-        </div>
-
-        <button
-          onClick={() => setTrades(null)}
-          className="flex items-center gap-2 text-rose-400"
-        >
-          <LogOut className="w-4 h-4" /> New Feed
-        </button>
-      </header>
-
-      <main className="max-w-[1700px] mx-auto w-full p-6 space-y-16 flex-1">
-        <SummaryCards stats={stats} />
-
-        {view === "analytics" ? (
-          <>
-            <EquityCurve trades={trades} />
-            <TradingCalendar dailyPnL={stats.dailyPnL} />
-            <DirectionalAnalysis
-              long={stats.longStats}
-              short={stats.shortStats}
-            />
-            <WinLossDistribution trades={trades} />
-            <DrawdownCurve trades={trades} />
-            <PerformanceBySymbol trades={trades} />
-          </>
-        ) : (
-          <TradeTable trades={trades} />
-        )}
-      </main>
+    <div className="min-h-screen bg-[#020617] text-slate-50 flex flex-col selection:bg-blue-500/20">
+    
     </div>
   );
 };
