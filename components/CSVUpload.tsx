@@ -1,5 +1,5 @@
 import { auth, db } from "../utils/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, Download, AlertCircle, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
@@ -63,6 +63,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
   };
 
   const finalizeMapping = async (mapping: ColumnMapping) => {
+    
     if (!csvPreview) return;
 
     let currentEquity = 0;
@@ -111,15 +112,33 @@ if (!user) {
 try {
   const tradesRef = collection(db, "users", user.uid, "trades");
 
-  await Promise.all(trades.map(trade => addDoc(tradesRef, trade)));
+  // 🔍 Get already saved trades
+  const existingSnapshot = await getDocs(tradesRef);
+  const existingTimestamps = new Set(
+    existingSnapshot.docs.map(doc => doc.data().timestamp?.toDate?.().getTime())
+  );
 
-  console.log("Trades saved to Firestore ✅");
+  // 🧠 Filter new trades only
+  const newTrades = trades.filter(
+    trade => !existingTimestamps.has(trade.timestamp.getTime())
+  );
+
+  if (newTrades.length === 0) {
+    alert("All trades already exist in cloud.");
+    return;
+  }
+
+  // ☁️ Save only new trades
+  await Promise.all(newTrades.map(trade => addDoc(tradesRef, trade)));
+
+  console.log("New trades saved ✅");
 
   onDataParsed(trades);
 } catch (err) {
   console.error("Error saving trades:", err);
   alert("Failed to save trades to cloud.");
 }
+
 
   };
 
