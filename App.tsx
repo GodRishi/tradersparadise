@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "./utils/firebase";
 import React, { useState, useMemo, useEffect } from 'react';
 import { Trade } from './types';
@@ -25,13 +25,34 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  };
+  useEffect(() => {
+    const loadTrades = async () => {
+      if (!user) return;
+
+      try {
+        const tradesRef = collection(db, "users", user.uid, "trades");
+        const snapshot = await getDocs(tradesRef);
+
+        const loadedTrades: Trade[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as any;
+
+          return {
+            ...data,
+            id: doc.id,
+            timestamp: new Date(data.timestamp),
+          };
+        });
+
+        if (loadedTrades.length > 0) {
+          setTrades(loadedTrades);
+        }
+      } catch (error) {
+        console.error("Error loading trades:", error);
+      }
+    };
+
+    loadTrades();
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -41,6 +62,26 @@ const App: React.FC = () => {
       console.error("Logout failed:", error);
     }
   };
+  // 🔹 Save trades to Firestore for logged-in user
+const saveTradesToCloud = async (parsedTrades: Trade[]) => {
+  if (!user) return;
+
+  try {
+    const tradesRef = collection(db, "users", user.uid, "trades");
+
+    for (const trade of parsedTrades) {
+      await addDoc(tradesRef, {
+        ...trade,
+        timestamp: trade.timestamp.toISOString(),
+      });
+    }
+
+    setTrades(parsedTrades);
+  } catch (error) {
+    console.error("Error saving trades:", error);
+  }
+};
+
 
 
   const stats = useMemo(() => {
@@ -95,7 +136,8 @@ const App: React.FC = () => {
         </nav>
         
         <div className="flex-1 flex flex-col items-center justify-center py-20">
-          <CSVUpload onDataParsed={setTrades} />
+          <CSVUpload onDataParsed={saveTradesToCloud} />
+
         </div>
 
         <footer className="w-full py-12 text-center border-t border-slate-900/50 bg-slate-950/20 flex-shrink-0">
@@ -288,5 +330,6 @@ const App: React.FC = () => {
 };
 
 export default App;
+
 
 
