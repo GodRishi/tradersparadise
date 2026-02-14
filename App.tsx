@@ -1,5 +1,5 @@
 import { collection, getDocs, addDoc } from "firebase/firestore";
-import { db } from "./utils/firebase";
+import { auth, db } from "./utils/firebase";
 import React, { useState, useMemo, useEffect } from 'react';
 import { Trade } from './types';
 import CSVUpload from './components/CSVUpload';
@@ -15,8 +15,10 @@ import { Table, BarChart3, Settings2, LogOut, ArrowUpRight, ArrowDownRight, Zap,
 import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
 import { auth, googleProvider } from "./utils/firebase";
 
+
+
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = <User | null>(null);
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [view, setView] = useState<'analytics' | 'trades'>('analytics');
 
@@ -53,6 +55,34 @@ const App: React.FC = () => {
 
     loadTrades();
   }, [user]);
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    try {
+      const tradesRef = collection(db, "users", user.uid, "trades");
+      const snapshot = await getDocs(tradesRef);
+
+      const loadedTrades = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate
+          ? doc.data().timestamp.toDate()
+          : new Date(doc.data().timestamp),
+      }));
+
+      // IMPORTANT → use your existing state setter
+      setTrades(loadedTrades);
+
+      console.log("Trades loaded from cloud ✅");
+    } catch (err) {
+      console.error("Failed to load trades:", err);
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
 
   const handleLogout = async () => {
     try {
@@ -330,6 +360,7 @@ const saveTradesToCloud = async (parsedTrades: Trade[]) => {
 };
 
 export default App;
+
 
 
 
