@@ -64,29 +64,41 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
 
   const finalizeMapping = async (mapping: ColumnMapping) => {
 
+const trades: Trade[] = csvPreview.data
+  .map((row, idx) => {
+    const entryPrice = parseFloat(row[mapping.entryPrice]) || 0;
+    const exitPrice = parseFloat(row[mapping.exitPrice]) || 0;
+    const quantity = parseFloat(row[mapping.quantity]) || 1;
+    const direction = row[mapping.direction]?.toString().toLowerCase();
+    const isLong = direction?.includes("long") || direction?.includes("buy");
+
+    let pnl = mapping.pnl ? parseFloat(row[mapping.pnl]) || 0 : 0;
+    if (!mapping.pnl) {
+      pnl = isLong
+        ? (exitPrice - entryPrice) * quantity
+        : (entryPrice - exitPrice) * quantity;
+    }
+
+    return {
+      id: `trade-${idx}`,
+      timestamp: new Date(row[mapping.timestamp]),
+      symbol: row[mapping.symbol] || "Unknown",
+      direction: isLong ? "Long" : "Short",
+      entryPrice,
+      exitPrice,
+      quantity,
+      pnl,
+      equity: 0,
+      drawdown: 0,
+    };
+  })
+  .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
 const user = auth.currentUser;
 
 if (!user) {
   alert("You must be logged in to save trades.");
   return;
-}
-
-try {
-  const tradesRef = collection(db, "users", user.uid, "trades");
-
-  // 🔴 DELETE OLD TRADES FIRST
-  const oldTrades = await getDocs(tradesRef);
-  await Promise.all(oldTrades.docs.map(doc => deleteDoc(doc.ref)));
-
-  // 🟢 SAVE NEW TRADES
-  await Promise.all(trades.map(trade => addDoc(tradesRef, trade)));
-
-  console.log("Trades replaced in Firestore ✅");
-
-  onDataParsed(trades);
-} catch (err) {
-  console.error("Error saving trades:", err);
-  alert("Failed to save trades to cloud.");
 }
 
 
