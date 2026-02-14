@@ -63,38 +63,42 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
   };
 
   const finalizeMapping = async (mapping: ColumnMapping) => {
-    if (!csvPreview) return;
 
-    let currentEquity = 0;
-    let peakEquity = 0;
 
-    const trades: Trade[] = csvPreview.data.map((row, idx) => {
-    const entryPrice = parseFloat(row[mapping.entryPrice]) || 0;
-    const exitPrice = parseFloat(row[mapping.exitPrice]) || 0;
-    const quantity = parseFloat(row[mapping.quantity]) || 1;
-    const direction = row[mapping.direction]?.toString().toLowerCase();
-    const isLong = direction?.includes('long') || direction?.includes('buy');
+  if (!csvPreview) return;
 
-    let pnl = mapping.pnl ? (parseFloat(row[mapping.pnl]) || 0) : 0;
-    if (!mapping.pnl) {
-      pnl = isLong
-        ? (exitPrice - entryPrice) * quantity
-        : (entryPrice - exitPrice) * quantity;
-    }
+  let currentEquity = 0;
+  let peakEquity = 0;
 
-    return {
-      id: `trade-${idx}`,
-      timestamp: new Date(row[mapping.timestamp]),
-      symbol: row[mapping.symbol] || 'Unknown',
-      direction: isLong ? 'Long' : 'Short',
-      entryPrice,
-      exitPrice,
-      quantity,
-      pnl,
-      equity: 0,
-      drawdown: 0,
-    };
-  }).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  const trades: Trade[] = csvPreview.data
+    .map((row, idx) => {
+      const entryPrice = parseFloat(row[mapping.entryPrice]) || 0;
+      const exitPrice = parseFloat(row[mapping.exitPrice]) || 0;
+      const quantity = parseFloat(row[mapping.quantity]) || 1;
+      const direction = row[mapping.direction]?.toString().toLowerCase();
+      const isLong = direction?.includes("long") || direction?.includes("buy");
+
+      let pnl = mapping.pnl ? parseFloat(row[mapping.pnl]) || 0 : 0;
+      if (!mapping.pnl) {
+        pnl = isLong
+          ? (exitPrice - entryPrice) * quantity
+          : (entryPrice - exitPrice) * quantity;
+      }
+
+      return {
+        id: `trade-${idx}`,
+        timestamp: new Date(row[mapping.timestamp]),
+        symbol: row[mapping.symbol] || "Unknown",
+        direction: isLong ? "Long" : "Short",
+        entryPrice,
+        exitPrice,
+        quantity,
+        pnl,
+        equity: 0,
+        drawdown: 0,
+      };
+    })
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
   trades.forEach((trade) => {
     currentEquity += trade.pnl;
@@ -103,9 +107,8 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
     trade.drawdown = peakEquity - currentEquity;
   });
 
-  // 🔹 FIRESTORE PART (must be inside function)
+  // 🔐 Ensure user logged in
   const user = auth.currentUser;
-
   if (!user) {
     alert("You must be logged in to save trades.");
     return;
@@ -114,13 +117,24 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
   try {
     const tradesRef = collection(db, "users", user.uid, "trades");
 
-    // delete old trades
-    const oldTradesSnapshot = await getDocs(tradesRef);
-    await Promise.all(oldTradesSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+    // 🔍 Get already saved trades
+    const existingSnapshot = await getDocs(tradesRef);
 
-    // save new trades
+    const existingTimestamps = new Set(
+      existingSnapshot.docs.map((doc) => {
+        const ts = doc.data().timestamp;
+        return ts?.toDate ? ts.toDate().getTime() : new Date(ts).getTime();
+      })
+    );
+
+    // 🆕 Filter only new trades
+    const newTrades = trades.filter(
+      (t) => !existingTimestamps.has(t.timestamp.getTime())
+    );
+
+    // 💾 Save only new ones
     await Promise.all(
-      trades.map(trade =>
+      newTrades.map((trade) =>
         addDoc(tradesRef, {
           ...trade,
           timestamp: trade.timestamp.toISOString(),
@@ -128,7 +142,7 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
       )
     );
 
-    console.log("Trades replaced in Cloud ✅");
+    console.log("Only new trades saved ✅");
 
     onDataParsed(trades);
   } catch (err) {
@@ -137,87 +151,6 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
   }
 };
 
-
-
-
-    
-    if (!csvPreview) return;
-
-    let currentEquity = 0;
-    let peakEquity = 0;
-
-    const trades: Trade[] = csvPreview.data.map((row, idx) => {
-      const entryPrice = parseFloat(row[mapping.entryPrice]) || 0;
-      const exitPrice = parseFloat(row[mapping.exitPrice]) || 0;
-      const quantity = parseFloat(row[mapping.quantity]) || 1;
-      const direction = row[mapping.direction]?.toString().toLowerCase();
-      const isLong = direction?.includes('long') || direction?.includes('buy');
-      
-      let pnl = mapping.pnl ? (parseFloat(row[mapping.pnl]) || 0) : 0;
-      if (!mapping.pnl) {
-        pnl = isLong ? (exitPrice - entryPrice) * quantity : (entryPrice - exitPrice) * quantity;
-      }
-
-      return {
-        id: `trade-${idx}`,
-        timestamp: new Date(row[mapping.timestamp]),
-        symbol: row[mapping.symbol] || 'Unknown',
-        direction: isLong ? 'Long' : 'Short',
-        entryPrice,
-        exitPrice,
-        quantity,
-        pnl,
-        equity: 0,
-        drawdown: 0,
-      };
-    }).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-    trades.forEach((trade) => {
-      currentEquity += trade.pnl;
-      trade.equity = currentEquity;
-      peakEquity = Math.max(peakEquity, currentEquity);
-      trade.drawdown = peakEquity - currentEquity;
-    });
-
-    const user = auth.currentUser;
-
-if (!user) {
-  alert("You must be logged in to save trades.");
-  return;
-}
-
-try {
-  const tradesRef = collection(db, "users", user.uid, "trades");
-
-  // 🔍 Get already saved trades
-  const existingSnapshot = await getDocs(tradesRef);
-  const existingTimestamps = new Set(
-    existingSnapshot.docs.map(doc => doc.data().timestamp?.toDate?.().getTime())
-  );
-
-  // 🧠 Filter new trades only
-  const newTrades = trades.filter(
-    trade => !existingTimestamps.has(trade.timestamp.getTime())
-  );
-
-  if (newTrades.length === 0) {
-    alert("All trades already exist in cloud.");
-    return;
-  }
-
-  // ☁️ Save only new trades
-  await Promise.all(newTrades.map(trade => addDoc(tradesRef, trade)));
-
-  console.log("New trades saved ✅");
-
-  onDataParsed(trades);
-} catch (err) {
-  console.error("Error saving trades:", err);
-  alert("Failed to save trades to cloud.");
-}
-
-
-  };
 
   const loadDemoData = () => {
     const demoTrades: Trade[] = Array.from({ length: 150 }).map((_, i) => {
