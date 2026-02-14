@@ -1,5 +1,5 @@
 import { auth, db } from "../utils/firebase";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, deleteDoc } from "firebase/firestore";
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, Download, AlertCircle, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
@@ -63,6 +63,33 @@ const CSVUpload: React.FC<CSVUploadProps> = ({ onDataParsed }) => {
   };
 
   const finalizeMapping = async (mapping: ColumnMapping) => {
+
+const user = auth.currentUser;
+
+if (!user) {
+  alert("You must be logged in to save trades.");
+  return;
+}
+
+try {
+  const tradesRef = collection(db, "users", user.uid, "trades");
+
+  // 🔴 DELETE OLD TRADES FIRST
+  const oldTrades = await getDocs(tradesRef);
+  await Promise.all(oldTrades.docs.map(doc => deleteDoc(doc.ref)));
+
+  // 🟢 SAVE NEW TRADES
+  await Promise.all(trades.map(trade => addDoc(tradesRef, trade)));
+
+  console.log("Trades replaced in Firestore ✅");
+
+  onDataParsed(trades);
+} catch (err) {
+  console.error("Error saving trades:", err);
+  alert("Failed to save trades to cloud.");
+}
+
+
     
     if (!csvPreview) return;
 
