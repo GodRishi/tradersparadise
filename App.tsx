@@ -1,5 +1,5 @@
 import { collection, getDocs, addDoc } from "firebase/firestore";
-import { auth, db } from "./utils/firebase";
+import { auth, db, googleProvider } from "./utils/firebase";
 import React, { useState, useMemo, useEffect } from 'react';
 import { Trade } from './types';
 import CSVUpload from './components/CSVUpload';
@@ -13,12 +13,10 @@ import { Logo } from './components/Logo';
 import { Table, BarChart3, Settings2, LogOut, ArrowUpRight, ArrowDownRight, Zap, Globe, ShieldCheck } from 'lucide-react';
 
 import { onAuthStateChanged, signInWithPopup, signOut, User } from "firebase/auth";
-import { auth, googleProvider } from "./utils/firebase";
-
 
 
 const App: React.FC = () => {
-  const [user, setUser] = <User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [trades, setTrades] = useState<Trade[] | null>(null);
   const [view, setView] = useState<'analytics' | 'trades'>('analytics');
 
@@ -362,6 +360,7 @@ const saveTradesToCloud = async (parsedTrades: Trade[]) => {
 };
 
 export default App;
+
 
 
 
