@@ -55,7 +55,9 @@ const App: React.FC = () => {
 
     loadTrades();
   }, [user]);
-  useEffect(() => {
+
+  
+useEffect(() => {
   const unsubscribe = onAuthStateChanged(auth, async (user) => {
     if (!user) return;
 
@@ -360,6 +362,7 @@ const saveTradesToCloud = async (parsedTrades: Trade[]) => {
 };
 
 export default App;
+
 
 
 
