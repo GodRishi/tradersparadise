@@ -21,11 +21,6 @@ const App: React.FC = () => {
   const [view, setView] = useState<'analytics' | 'trades'>('analytics');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, setUser);
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
     const loadTrades = async () => {
       if (!user) return;
 
@@ -111,6 +106,16 @@ const saveTradesToCloud = async (parsedTrades: Trade[]) => {
     console.error("Error saving trades:", error);
   }
 };
+
+const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    setUser(result.user);
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+};
+
 
 
 
@@ -360,6 +365,7 @@ const saveTradesToCloud = async (parsedTrades: Trade[]) => {
 };
 
 export default App;
+
 
 
 
